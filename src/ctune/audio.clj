@@ -11,7 +11,6 @@
 
 (def audio-data (atom []))
 (def powers-data (atom []))
-(def keep-running? (atom true))
 (def fft-buffer (double-array []))
 
 (defn listen-audio [sample-rate buffer-size]
