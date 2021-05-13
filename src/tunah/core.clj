@@ -40,16 +40,22 @@
 (defn get-note-range
   [frequency note-range note]
   (if (and (< frequency (:frequency note))
-           (< (:frequency note) (:max note-range)))
-    (merge note-range {:max_note note :max (:frequency note)})
+           (< (:frequency note) (:frequency (:max-note note-range))))
+    (merge note-range {:max-note note})
     (if (and (> frequency (:frequency note))
-             (< (:min note-range) (:frequency note)))
-      (merge note-range {:min_note note :min (:frequency note)})
+             (< (:frequency (:min-note note-range)) (:frequency note)))
+      (merge note-range {:min-note note})
       note-range)))
+
+(defn get-closer-note [frequency note-range]
+  (if (< (Math/abs (- (:frequency (:max-note note-range)) frequency))
+         (Math/abs (- (:frequency (:min-note note-range)) frequency)))
+    (:max-note note-range)
+    (:min-note note-range)))
 
 (defn calculate-note [frequency]
   (loop [remaining-notes notes
-         note-range {:min 0 :max 1000 :min_note {} :max_note {}}]
+         note-range {:min-note {} :max-note {}}]
     (if (empty? remaining-notes)
       note-range
       (let [[note & remaining] remaining-notes]
