@@ -1,4 +1,4 @@
-(ns ctune.audio
+(ns tunah.audio
   (:require [clojure.core.async :as a]
             [cfft.core :as cfft])
   (:import javax.sound.sampled.AudioFormat

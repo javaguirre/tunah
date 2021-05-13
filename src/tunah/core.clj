@@ -1,9 +1,9 @@
-(ns ctune.core
+(ns tunah.core
   (:require [incanter.charts :refer [xy-plot]]
             [seesaw.core :as ui]
             [seesaw.mig :refer [mig-panel]]
             [seesaw.bind :as bind]
-            [ctune.audio :refer [open-mic audio-data powers-data]])
+            [tunah.audio :refer [open-mic audio-data powers-data]])
   (:import org.jfree.chart.ChartPanel
            java.lang.Math)
   (:gen-class))
@@ -37,19 +37,24 @@
             {:frequency 880 :note "a5" :common_name "A"}
             {:frequency 987 :note "b5" :common_name "B"}])
 
+(defn get-note-range
+  [frequency note-range note]
+  (if (and (< frequency (:frequency note))
+           (< (:frequency note) (:max note-range)))
+    (merge note-range {:max_note note :max (:frequency note)})
+    (if (and (> frequency (:frequency note))
+             (< (:min note-range) (:frequency note)))
+      (merge note-range {:min_note note :min (:frequency note)})
+      note-range)))
+
 (defn calculate-note [frequency]
-  (loop [remaining-notes notes note-range {:min 0 :max 1000 :min_note {} :max_note {}}]
-    (println note-range)
+  (loop [remaining-notes notes
+         note-range {:min 0 :max 1000 :min_note {} :max_note {}}]
     (if (empty? remaining-notes)
       note-range
       (let [[note & remaining] remaining-notes]
         (recur remaining
-               (if (and (< frequency (:frequency note)) (< (:frequency note) (:max note-range)))
-                 (merge note-range {:max_note note :max (:frequency note)})
-                 (if (and (> frequency (:frequency note)) (< (:min note-range) (:frequency note)))
-                   (merge note-range {:min_note note :min (:frequency note)})
-                   note-range)
-               ))))))
+               (get-note-range frequency note-range note))))))
 
 (defn -main []
   (do
