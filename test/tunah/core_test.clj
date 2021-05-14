@@ -1,6 +1,7 @@
 (ns tunah.core-test
   (:require [clojure.test :refer :all]
-            [tunah.core :refer :all]))
+            [tunah.tone :refer
+             [calculate-note, get-note-range get-closer-note]]))
 
 (deftest cicd-test
   (testing "Test CI/CD"

@@ -3,7 +3,9 @@
             [seesaw.core :as ui]
             [seesaw.mig :refer [mig-panel]]
             [seesaw.bind :as bind]
-            [tunah.audio :refer [open-mic audio-data powers-data]])
+            [tunah.audio :refer [open-mic audio-data powers-data]]
+            [tunah.tone :refer [calculate-note]]
+            [clojure.tools.cli :refer [parse-opts]])
   (:import org.jfree.chart.ChartPanel
            java.lang.Math)
   (:gen-class))
@@ -27,42 +29,24 @@
   (reset! freq (* (/ (/ sample-rate 2.0) buffer-size)
                   (first (apply max-key second (map-indexed vector data))))))
 
-(def notes [{:frequency 440 :note "a4" :common_name "A"}
-            {:frequency 493 :note "b4" :common_name "B"}
-            {:frequency 523 :note "c5" :common_name "C"}
-            {:frequency 587 :note "d5" :common_name "D"}
-            {:frequency 659 :note "e5" :common_name "E"}
-            {:frequency 698 :note "f5" :common_name "F"}
-            {:frequency 783 :note "g5" :common_name "G"}
-            {:frequency 880 :note "a5" :common_name "A"}
-            {:frequency 987 :note "b5" :common_name "B"}])
+(def cli-options
+  ;; An option with a required argument
+  [["-p" "--port PORT" "Port number"
+    :default 80
+    :parse-fn #(Integer/parseInt %)
+    :validate [#(< 0 % 0x10000) "Must be a number between 0 and 65536"]]
+   ;; A non-idempotent option (:default is applied first)
+   ["-v" nil "Verbosity level"
+    :id :verbosity
+    :default 0
+    :update-fn inc] ; Prior to 0.4.1, you would have to use:
+                   ;; :assoc-fn (fn [m k _] (update-in m [k] inc))
+   ;; A boolean option defaulting to nil
+   ["-h" "--help"]])
 
-(defn get-note-range
-  [frequency note-range note]
-  (if (and (< frequency (:frequency note))
-           (< (:frequency note) (:frequency (:max-note note-range))))
-    (merge note-range {:max-note note})
-    (if (and (> frequency (:frequency note))
-             (< (:frequency (:min-note note-range)) (:frequency note)))
-      (merge note-range {:min-note note})
-      note-range)))
-
-(defn get-closer-note [frequency note-range]
-  (if (< (Math/abs (- (:frequency (:max-note note-range)) frequency))
-         (Math/abs (- (:frequency (:min-note note-range)) frequency)))
-    (:max-note note-range)
-    (:min-note note-range)))
-
-(defn calculate-note [frequency]
-  (loop [remaining-notes notes
-         note-range {:min-note {} :max-note {}}]
-    (if (empty? remaining-notes)
-      note-range
-      (let [[note & remaining] remaining-notes]
-        (recur remaining
-               (get-note-range frequency note-range note))))))
-
-(defn -main []
+(defn -main [& args]
+  (parse-opts args cli-options))
+  (println cli-options)
   (do
     (ui/native!)
     (open-mic sample-rate buffer-size)
@@ -71,16 +55,16 @@
           frequency-plot (wave-plot @powers-data sample-rate "0")
           frequency-chart (ChartPanel. frequency-plot)
           app-panel (mig-panel
-                     :constraints []
-                     :items [[frequency-chart]])]
+                      :constraints []
+                      :items [[frequency-chart]])]
       (bind/bind powers-data
-                 (bind/b-do* (fn [_] (let [data (filters @powers-data)
-                                           freq (calc-freq data)]
-                                       (println freq (calculate-note freq))
-                                       (.setChart frequency-chart (wave-plot data sample-rate (str freq)))
-                                       (calc-freq data)))))
+                  (bind/b-do* (fn [_] (let [data (filters @powers-data)
+                                            freq (calc-freq data)]
+                                        (println freq (calculate-note freq))
+                                        (.setChart frequency-chart (wave-plot data sample-rate (str freq)))
+                                        (calc-freq data)))))
       (ui/invoke-later
-       (-> (ui/frame :title "Frequencies"
-                     :content app-panel
-                     :on-close :exit)
-           ui/pack! ui/show!)))))
+        (-> (ui/frame :title "Frequencies"
+                      :content app-panel
+                      :on-close :exit)
+            ui/pack! ui/show!))))
