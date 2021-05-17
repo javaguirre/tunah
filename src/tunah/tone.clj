@@ -1,4 +1,5 @@
 (ns tunah.tone)
+(:import java.lang.Math)
 
 (def min-note {:frequency 440 :note "a4" :common_name "A"})
 (def max-note {:frequency 987 :note "b5" :common_name "B"})
