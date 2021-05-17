@@ -1,6 +1,8 @@
 (ns tunah.tone)
 
-(def notes [{:frequency 440 :note "a4" :common_name "A"}
+(def min-note {:frequency 440 :note "a4" :common_name "A"})
+(def max-note {:frequency 987 :note "b5" :common_name "B"})
+(def notes [min-note
             {:frequency 493 :note "b4" :common_name "B"}
             {:frequency 523 :note "c5" :common_name "C"}
             {:frequency 587 :note "d5" :common_name "D"}
@@ -8,7 +10,7 @@
             {:frequency 698 :note "f5" :common_name "F"}
             {:frequency 783 :note "g5" :common_name "G"}
             {:frequency 880 :note "a5" :common_name "A"}
-            {:frequency 987 :note "b5" :common_name "B"}])
+            max-note])
 
 (defn get-note-range
   [frequency note-range note]
@@ -28,7 +30,7 @@
 
 (defn calculate-note [frequency]
   (loop [remaining-notes notes
-         note-range {:min-note {} :max-note {}}]
+         note-range {:min-note min-note :max-note max-note}]
     (if (empty? remaining-notes)
       note-range
       (let [[note & remaining] remaining-notes]
